@@ -1,0 +1,4 @@
+RUN: llvm-mc --triple=x86_64-unknown-linux --filetype=obj --split-dwarf-file=hello.dwo -dwarf-version=5 %p/../Inputs/overflow/hello.s -o hello.o
+RUN: llvm-mc --triple=x86_64-unknown-linux --filetype=obj --split-dwarf-file=main.dwo -dwarf-version=5 %p/../Inputs/overflow/main.s -o main.o
+RUN: not llvm-dwp -e hello.o -e main.o -o overflow.dwp 2>&1 | FileCheck %s
+CHECK: error: Section size overflow in debug_info.dwo

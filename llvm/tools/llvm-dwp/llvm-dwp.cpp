@@ -462,8 +462,18 @@ static Error handleSection(
     auto Index = getContributionIndex(Kind);
     if (Kind != DW_SECT_EXT_TYPES) {
       CurEntry.Contributions[Index].Offset = ContributionOffsets[Index];
-      ContributionOffsets[Index] +=
-          (CurEntry.Contributions[Index].Length = Contents.size());
+      uint32_t BitCount = sizeof(ContributionOffsets[Index]) * 8;
+      APInt Offset{BitCount, ContributionOffsets[Index], false};
+      APInt NewLength{
+          BitCount, CurEntry.Contributions[Index].Length = Contents.size(), false};
+      bool Overflow = false;
+      APInt NewOffset = Offset.uadd_ov(NewLength, Overflow);
+      if (Overflow) {
+        std::string SectionName = SectionPair->first().str();
+        return make_error<DWPError>(
+            std::string("Section size overflow in ") + SectionName);
+      }
+      ContributionOffsets[Index] = NewOffset.getLimitedValue();
     }
 
     switch (Kind) {
