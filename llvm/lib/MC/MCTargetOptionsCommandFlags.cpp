@@ -42,6 +42,7 @@ MCOPT(bool, Dwarf64)
 MCOPT(bool, ShowMCInst)
 MCOPT(bool, FatalWarnings)
 MCOPT(bool, NoWarn)
+MCOPT(bool, WarnOverflow)
 MCOPT(bool, NoDeprecatedWarn)
 MCOPT(std::string, ABIName)
 
@@ -86,6 +87,11 @@ llvm::mc::RegisterMCTargetOptionsFlags::RegisterMCTargetOptionsFlags() {
                            cl::aliasopt(NoWarn));
   MCBINDOPT(NoWarn);
 
+  static cl::opt<bool> WarnOverflow(
+      "warn-overflow", cl::desc("Warn about section overflow in dwp and "
+                                "preserve the overflow behavior"));
+  MCBINDOPT(WarnOverflow);
+
   static cl::opt<bool> NoDeprecatedWarn(
       "no-deprecated-warn", cl::desc("Suppress all deprecated warnings"));
   MCBINDOPT(NoDeprecatedWarn);
@@ -109,6 +115,7 @@ MCTargetOptions llvm::mc::InitMCTargetOptionsFromFlags() {
   Options.ABIName = getABIName();
   Options.MCFatalWarnings = getFatalWarnings();
   Options.MCNoWarn = getNoWarn();
+  Options.MCWarnOverflow = getWarnOverflow();
   Options.MCNoDeprecatedWarn = getNoDeprecatedWarn();
   return Options;
 }

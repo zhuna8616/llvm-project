@@ -38,6 +38,8 @@ bool getFatalWarnings();
 
 bool getNoWarn();
 
+bool getWarnOverflow();
+
 bool getNoDeprecatedWarn();
 
 std::string getABIName();

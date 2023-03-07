@@ -432,7 +432,7 @@ static Error handleSection(
     StringRef &CurStrSection, StringRef &CurStrOffsetSection,
     std::vector<StringRef> &CurTypesSection, StringRef &InfoSection,
     StringRef &AbbrevSection, StringRef &CurCUIndexSection,
-    StringRef &CurTUIndexSection) {
+    StringRef &CurTUIndexSection, bool WarnOverflow) {
   if (Section.isBSS())
     return Error::success();
 
@@ -469,9 +469,13 @@ static Error handleSection(
       bool Overflow = false;
       APInt NewOffset = Offset.uadd_ov(NewLength, Overflow);
       if (Overflow) {
-        std::string SectionName = SectionPair->first().str();
-        return make_error<DWPError>(
-            std::string("Section size overflow in ") + SectionName);
+        std::string ErrorMsg = std::string("Section size overflow in ") +
+                               SectionPair->first().str();
+        if (WarnOverflow) {
+          WithColor::defaultWarningHandler(make_error<DWPError>(ErrorMsg));
+        } else {
+          return make_error<DWPError>(ErrorMsg);
+        }
       }
       ContributionOffsets[Index] = NewOffset.getLimitedValue();
     }
@@ -545,7 +549,8 @@ getDWOFilenames(StringRef ExecFilename) {
   return std::move(DWOPaths);
 }
 
-static Error write(MCStreamer &Out, ArrayRef<std::string> Inputs) {
+static Error write(MCStreamer &Out, ArrayRef<std::string> Inputs,
+                   bool WarnOverflow) {
   const auto &MCOFI = *Out.getContext().getObjectFileInfo();
   MCSection *const StrSection = MCOFI.getDwarfStrDWOSection();
   MCSection *const StrOffsetSection = MCOFI.getDwarfStrOffDWOSection();
@@ -599,7 +604,8 @@ static Error write(MCStreamer &Out, ArrayRef<std::string> Inputs) {
               CUIndexSection, TUIndexSection, Section, Out,
               UncompressedSections, ContributionOffsets, CurEntry,
               CurStrSection, CurStrOffsetSection, CurTypesSection, InfoSection,
-              AbbrevSection, CurCUIndexSection, CurTUIndexSection))
+              AbbrevSection, CurCUIndexSection, CurTUIndexSection,
+              WarnOverflow))
         return Err;
 
     if (InfoSection.empty())
@@ -794,7 +800,7 @@ int main(int argc, char **argv) {
                         std::make_move_iterator(DWOs->end()));
   }
 
-  if (auto Err = write(*MS, DWOFilenames)) {
+  if (auto Err = write(*MS, DWOFilenames, MCOptions.MCWarnOverflow)) {
     logAllUnhandledErrors(std::move(Err), WithColor::error());
     return 1;
   }
