@@ -43,7 +43,6 @@ public:
   bool MCNoExecStack : 1;
   bool MCFatalWarnings : 1;
   bool MCNoWarn : 1;
-  bool MCWarnOverflow : 1;
   bool MCNoDeprecatedWarn : 1;
   bool MCSaveTempLabels : 1;
   bool MCUseDwarfDirectory : 1;

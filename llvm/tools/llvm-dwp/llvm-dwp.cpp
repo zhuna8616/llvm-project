@@ -59,6 +59,11 @@ static cl::list<std::string> ExecFilenames(
     cl::desc("Specify the executable/library files to get the list of *.dwo from"),
     cl::value_desc("filename"), cl::cat(DwpCategory));
 
+static cl::opt<bool> ContinueOnCuIndexOverflow(
+"continue-on-cu-index-overflow",
+cl::desc("This turns an error when offset for .debug_*.dwo sections "
+         "overfolws into a warning."), cl::cat(DwpCategory));
+
 static cl::opt<std::string> OutputFilename(cl::Required, "o",
                                            cl::desc("Specify the output file."),
                                            cl::value_desc("filename"),
@@ -800,7 +805,7 @@ int main(int argc, char **argv) {
                         std::make_move_iterator(DWOs->end()));
   }
 
-  if (auto Err = write(*MS, DWOFilenames, MCOptions.MCWarnOverflow)) {
+  if (auto Err = write(*MS, DWOFilenames, ContinueOnCuIndexOverflow)) {
     logAllUnhandledErrors(std::move(Err), WithColor::error());
     return 1;
   }
